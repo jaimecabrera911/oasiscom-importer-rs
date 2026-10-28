@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 description = "Importador de XML para OasisCom"
 
+[[bin]]
+name = "oasis"
+path = "src/main.rs"
+
 [dependencies]
 base64 = "0.22"
 chrono = { version = "0.4", features = ["clock"] }

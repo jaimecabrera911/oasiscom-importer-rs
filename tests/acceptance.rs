@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-const BIN: &str = env!("CARGO_BIN_EXE_oasiscom-importer");
+const BIN: &str = env!("CARGO_BIN_EXE_oasis");
 
 static COUNTER: AtomicU64 = AtomicU64::new(0);
 

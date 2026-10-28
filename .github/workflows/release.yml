@@ -21,16 +21,20 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             packages: musl-tools
-            asset: oasiscom-importer-linux-x86_64
+            ext: ""
+            asset: oasis-linux-x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            asset: oasiscom-importer-windows-x86_64.exe
+            ext: ".exe"
+            asset: oasis-windows-x86_64.exe
           - os: macos-latest
             target: aarch64-apple-darwin
-            asset: oasiscom-importer-macos-arm64
+            ext: ""
+            asset: oasis-macos-arm64
           - os: macos-15-intel
             target: x86_64-apple-darwin
-            asset: oasiscom-importer-macos-x86_64
+            ext: ""
+            asset: oasis-macos-x86_64
 
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +54,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          cp target/${{ matrix.target }}/release/oasiscom-importer* dist/${{ matrix.asset }}
+          cp "target/${{ matrix.target }}/release/oasis${{ matrix.ext }}" "dist/${{ matrix.asset }}"
+          chmod +x "dist/${{ matrix.asset }}"
 
       - name: Publicar artefacto de la ejecución
         uses: actions/upload-artifact@v4
