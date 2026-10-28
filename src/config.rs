@@ -67,6 +67,7 @@ pub struct Config {
     pub http_retries: u32,
     pub retry_backoff: Duration,
     pub log_level: LogLevel,
+    pub log_file: PathBuf,
 }
 
 #[derive(Debug, Default)]
@@ -248,6 +249,7 @@ impl Config {
             ));
         }
         let log_level = log_level.unwrap_or(LogLevel::Info);
+        let log_file = PathBuf::from(text("LOG_FILE", "./logs/oasis.log"));
 
         if token_field.is_empty() {
             errors.push("OASIS_TOKEN_FIELD no puede estar vacío".to_string());
@@ -323,6 +325,7 @@ impl Config {
             http_retries,
             retry_backoff,
             log_level,
+            log_file,
         })
     }
 }
@@ -380,6 +383,11 @@ fn find_env_file() -> Option<PathBuf> {
         return Some(beside);
     }
     None
+}
+
+/// Archivo `.env` que se edita con `oasis config`.
+pub fn env_file_for_edit() -> PathBuf {
+    find_env_file().unwrap_or_else(|| PathBuf::from(".env"))
 }
 
 pub fn parse_env_file(path: &Path) -> HashMap<String, String> {

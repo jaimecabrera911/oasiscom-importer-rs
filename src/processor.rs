@@ -114,14 +114,6 @@ impl<'a> Processor<'a> {
                 base.http = err.http;
                 base.mensaje = truncate(&err.body, MESSAGE_LIMIT);
                 base.error = err.message;
-                self.logger.error(
-                    "envío fallido",
-                    &[
-                        ("archivo", base.archivo.clone()),
-                        ("http", err_http_text(base.http)),
-                        ("error", base.error.clone()),
-                    ],
-                );
                 self.finish_with_move(path, base, start, false)
             }
         }
@@ -133,6 +125,16 @@ impl<'a> Processor<'a> {
         }
         event.fecha = Local::now().to_rfc3339_opts(chrono::SecondsFormat::Micros, false);
         event.duracion_ms = start.elapsed().as_millis() as u64;
+        if event.estado == "FALLIDO" {
+            self.logger.error(
+                "archivo fallido",
+                &[
+                    ("archivo", event.archivo.clone()),
+                    ("http", err_http_text(event.http)),
+                    ("error", event.error.clone()),
+                ],
+            );
+        }
         if let Err(e) = self.store.append(&event) {
             self.logger.error(
                 "no se pudo registrar el evento",

@@ -42,6 +42,13 @@ impl Case {
         cmd
     }
 
+    fn bare(&self) -> Command {
+        let mut cmd = Command::new(BIN);
+        cmd.current_dir(&self.dir);
+        cmd.env_clear();
+        cmd
+    }
+
     fn run(&self, args: &[&str]) -> Output {
         self.command().args(args).output().unwrap()
     }
@@ -77,6 +84,113 @@ fn stderr(o: &Output) -> String {
 
 fn stdout(o: &Output) -> String {
     String::from_utf8_lossy(&o.stdout).to_string()
+}
+
+#[test]
+fn config_command_edits_env_file() {
+    let case = Case::new("config_cmd");
+
+    let out = case.bare().args(["config", "list"]).output().unwrap();
+    assert!(out.status.success(), "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(text.contains("IS_MOCK"));
+    assert!(text.contains("OASIS_PASSWORD"));
+    assert!(text.contains("(defecto)"));
+
+    let out = case
+        .bare()
+        .args(["config", "set", "WATCH_DIR", "/tmp/entrada"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{}", stderr(&out));
+    let env = std::fs::read_to_string(case.dir.join(".env")).unwrap();
+    assert!(env.contains("WATCH_DIR=/tmp/entrada"));
+
+    let out = case
+        .bare()
+        .args(["config", "get", "WATCH_DIR"])
+        .output()
+        .unwrap();
+    assert!(stdout(&out).contains("/tmp/entrada"));
+
+    let out = case
+        .bare()
+        .args(["config", "set", "OASIS_PASSWORD", "secreto"])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    let out = case.bare().args(["config", "list"]).output().unwrap();
+    let text = stdout(&out);
+    assert!(!text.contains("secreto"));
+    assert!(text.contains("***"));
+
+    let out = case
+        .bare()
+        .args(["config", "set", "IS_MOCK", "quizas"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let out = case
+        .bare()
+        .args(["config", "set", "NO_EXISTE", "x"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+
+    let out = case
+        .bare()
+        .args(["config", "unset", "WATCH_DIR"])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    let env = std::fs::read_to_string(case.dir.join(".env")).unwrap();
+    assert!(!env.contains("WATCH_DIR="));
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(case.dir.join(".env"))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777;
+        assert_eq!(mode, 0o600);
+    }
+
+    use std::io::Write;
+    let mut child = case
+        .bare()
+        .arg("config")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child.stdin.take().unwrap().write_all(b"1\n2\n0\n").unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert!(out.status.success(), "{}", stderr(&out));
+    let env = std::fs::read_to_string(case.dir.join(".env")).unwrap();
+    assert!(env.contains("IS_MOCK=false"), "{env}");
+}
+
+#[test]
+fn logs_are_saved_to_file_without_ansi() {
+    let case = Case::new("logfile");
+    let file = case.write_xml("inbox/pedido.xml", XML);
+    let log = case.dir.join("logs").join("oasis.log");
+    let out = case
+        .command()
+        .env("LOG_LEVEL", "debug")
+        .env("LOG_FILE", log.to_str().unwrap())
+        .args(["send", file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{}", stderr(&out));
+    let text = std::fs::read_to_string(&log).unwrap();
+    assert!(text.contains("procesando archivo"), "{text}");
+    assert!(text.contains("archivo=pedido.xml"), "{text}");
+    assert!(!text.contains('\x1b'));
+    assert!(!stderr(&out).contains('\x1b'));
 }
 
 #[test]
@@ -198,6 +312,13 @@ fn empty_and_oversized_files_fail() {
             .count(),
         2
     );
+    let log = std::fs::read_to_string(case.dir.join("logs/oasis.log")).unwrap();
+    assert!(
+        log.contains("archivo fallido") && log.contains("archivo=vacio.xml"),
+        "{log}"
+    );
+    assert!(log.contains("archivo=grande.xml"), "{log}");
+    assert!(log.contains("error=archivo vacío"), "{log}");
 }
 
 #[test]

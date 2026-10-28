@@ -4,3 +4,5 @@
 /inbox/*.xml
 /inbox/processed
 /inbox/failed
+/logs
+*.log

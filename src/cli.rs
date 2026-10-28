@@ -367,6 +367,7 @@ Comandos:
   watch                  Fuerza la vigilancia de WATCH_DIR
   send <archivo...>      Envía los archivos indicados (alias: run)
   token                  Genera e imprime un token en stdout
+  config                 Edita las variables de .env (interactivo)
   status [filtros]       Consulta el historial de envíos
   version, -v, --version Muestra la versión
   help, -h, --help       Muestra esta ayuda
@@ -379,6 +380,13 @@ Filtros de status:
   --desde AAAA-MM-DD Incluye desde esa fecha
   --hasta AAAA-MM-DD Incluye hasta esa fecha
   --limit N          Filas a mostrar (0 = todas, defecto 20)
+
+Configuración:
+  config             Menú interactivo para editar .env
+  config list        Muestra las variables efectivas
+  config get CLAVE   Muestra una variable
+  config set CLAVE VALOR
+  config unset CLAVE
 "#,
         version = crate::VERSION
     )

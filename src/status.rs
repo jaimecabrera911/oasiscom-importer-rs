@@ -62,8 +62,7 @@ impl StatusStore {
                 std::fs::create_dir_all(parent)?;
             }
         }
-        let mut line =
-            serde_json::to_string(event).map_err(io::Error::other)?;
+        let mut line = serde_json::to_string(event).map_err(io::Error::other)?;
         line.push('\n');
         let mut file = OpenOptions::new()
             .create(true)

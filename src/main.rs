@@ -1,6 +1,7 @@
 mod cli;
 mod client;
 mod config;
+mod config_cmd;
 mod logger;
 mod processor;
 mod status;
@@ -24,6 +25,13 @@ fn main() {
 }
 
 fn run() -> i32 {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    // `config` se ejecuta antes de validar la configuración para poder corregirla.
+    if args.first().map(|s| s.as_str()) == Some("config") {
+        return config_cmd::run(&args[1..]);
+    }
+
     let cfg = match Config::load() {
         Ok(cfg) => cfg,
         Err(e) => {
@@ -31,9 +39,8 @@ fn run() -> i32 {
             return 2;
         }
     };
-    let logger = Logger::new(cfg.log_level);
+    let logger = Logger::new(cfg.log_level, &cfg.log_file);
 
-    let args: Vec<String> = std::env::args().skip(1).collect();
     let stop = Arc::new(AtomicBool::new(false));
     let stop_flag = Arc::clone(&stop);
     if let Err(e) = ctrlc::set_handler(move || stop_flag.store(true, Ordering::SeqCst)) {
