@@ -21,12 +21,16 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             packages: musl-tools
+            asset: oasiscom-importer-linux-x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            asset: oasiscom-importer-windows-x86_64.exe
           - os: macos-latest
             target: aarch64-apple-darwin
+            asset: oasiscom-importer-macos-arm64
           - os: macos-15-intel
             target: x86_64-apple-darwin
+            asset: oasiscom-importer-macos-x86_64
 
     steps:
       - uses: actions/checkout@v4
@@ -42,9 +46,36 @@ jobs:
       - name: Compilar
         run: cargo build --locked --release --target ${{ matrix.target }}
 
-      - name: Publicar binario
+      - name: Preparar binario
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/oasiscom-importer* dist/${{ matrix.asset }}
+
+      - name: Publicar artefacto de la ejecución
         uses: actions/upload-artifact@v4
         with:
-          name: oasiscom-importer-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/oasiscom-importer*
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
           if-no-files-found: error
+
+  release:
+    name: Crear Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Descargar binarios
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publicar Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
