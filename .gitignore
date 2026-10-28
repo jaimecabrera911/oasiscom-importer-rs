@@ -1,0 +1,6 @@
+/target
+.env
+/status
+/inbox/*.xml
+/inbox/processed
+/inbox/failed
