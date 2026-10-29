@@ -97,6 +97,9 @@ fn config_command_edits_env_file() {
     assert!(text.contains("OASIS_PASSWORD"));
     assert!(text.contains("(defecto)"));
 
+    let created = std::fs::read_to_string(case.dir.join(".env")).unwrap();
+    assert!(created.contains("IS_MOCK=true"), "{created}");
+
     let out = case
         .bare()
         .args(["config", "set", "WATCH_DIR", "/tmp/entrada"])
@@ -189,6 +192,8 @@ fn logs_are_saved_to_file_without_ansi() {
     let text = std::fs::read_to_string(&log).unwrap();
     assert!(text.contains("procesando archivo"), "{text}");
     assert!(text.contains("archivo=pedido.xml"), "{text}");
+    assert!(text.contains("archivo enviado"), "{text}");
+    assert!(text.contains("http=200"), "{text}");
     assert!(!text.contains('\x1b'));
     assert!(!stderr(&out).contains('\x1b'));
 }

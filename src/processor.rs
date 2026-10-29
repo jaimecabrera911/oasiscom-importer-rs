@@ -134,6 +134,15 @@ impl<'a> Processor<'a> {
                     ("error", event.error.clone()),
                 ],
             );
+        } else {
+            self.logger.info(
+                "archivo enviado",
+                &[
+                    ("archivo", event.archivo.clone()),
+                    ("http", event.http.to_string()),
+                    ("duracion_ms", event.duracion_ms.to_string()),
+                ],
+            );
         }
         if let Err(e) = self.store.append(&event) {
             self.logger.error(

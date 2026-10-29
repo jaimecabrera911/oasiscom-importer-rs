@@ -310,8 +310,45 @@ const VARS: &[VarDef] = &[
     ),
 ];
 
+/// Contenido con el que se crea el `.env` cuando no existe (mismo que `.env.example`).
+const DEFAULT_ENV: &str = include_str!("../.env.example");
+
+fn ensure_env_file(path: &std::path::Path) -> io::Result<bool> {
+    if path.is_file() {
+        return Ok(false);
+    }
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)?;
+        }
+    }
+    std::fs::write(path, DEFAULT_ENV)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))?;
+    }
+    Ok(true)
+}
+
 pub fn run(args: &[String]) -> i32 {
     let path = crate::config::env_file_for_edit();
+
+    let manages_env = matches!(
+        args.first().map(|s| s.as_str()),
+        None | Some("list") | Some("show") | Some("get") | Some("set") | Some("unset")
+    );
+    if manages_env {
+        match ensure_env_file(&path) {
+            Ok(true) => eprintln!("creado {} con los valores por defecto", path.display()),
+            Ok(false) => {}
+            Err(e) => {
+                eprintln!("error creando .env: {e}");
+                return 1;
+            }
+        }
+    }
+
     let mut editor = match Editor::load(path) {
         Ok(e) => e,
         Err(e) => {

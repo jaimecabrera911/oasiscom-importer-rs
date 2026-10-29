@@ -47,7 +47,7 @@ Códigos de salida: `0` éxito, `1` fallo operativo, `2` error de configuración
 ./target/release/oasis config unset WATCH_DIR      # vuelve al valor por defecto
 ```
 
-`config` escribe en el `.env` del directorio actual (o junto al ejecutable si no hay uno local), conserva comentarios y crea el archivo con permisos `0600` en Unix. En una terminal interactiva muestra todas las variables y se navega con `↑`/`↓` y `Enter`: los booleanos y las opciones se eligen de la misma forma, y los textos, enteros y duraciones se escriben directamente. La lista se pagina si no cabe en la pantalla. Si no hay terminal (por ejemplo desde un script), se usa un menú numérico equivalente.
+`config` escribe en el `.env` del directorio actual (o junto al ejecutable si no hay uno local), conserva comentarios y crea el archivo con permisos `0600` en Unix. Si el `.env` no existe, lo crea con los valores por defecto (mismo contenido que `.env.example`) antes de continuar. En una terminal interactiva muestra todas las variables y se navega con `↑`/`↓` y `Enter`: los booleanos y las opciones se eligen de la misma forma, y los textos, enteros y duraciones se escriben directamente. La lista se pagina si no cabe en la pantalla. Si no hay terminal (por ejemplo desde un script), se usa un menú numérico equivalente.
 
 Las variables del entorno del proceso siempre tienen prioridad sobre `.env`; si una variable está definida en el entorno, el comando lo advierte.
 
